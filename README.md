@@ -1,5 +1,5 @@
 # Prerequisites
-#
+# Version 1.1
 - JDK 11 
 - Maven 3 
 - MySQL 8
