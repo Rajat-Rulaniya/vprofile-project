@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven "MAVEN3"
-        jdk "OracleJDK8"
+        jdk "OracleJDK17"
     }
 
     environment {
