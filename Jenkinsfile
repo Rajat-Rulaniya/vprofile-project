@@ -34,7 +34,7 @@ pipeline {
                     archiveArtifacts artifacts: '**/*.war'
                 }
             }
-        }
+        } // Hello
 
         stage("Test") {
             steps {
