@@ -97,7 +97,8 @@ pipeline {
 
     post {
         always {
-            slackSend channel: '#jenkinscicd', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n, Artifact uploaded to Nexus repository!"
+            echo 'Slack Notifications.'
+            slackSend channel: '#myjenkinsci', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
         }
     }
 }
