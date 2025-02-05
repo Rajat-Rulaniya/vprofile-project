@@ -13,10 +13,10 @@ pipeline {
     environment {
         NEXUS_USER = 'admin'
         NEXUS_PASS = '1234'
-        RELEASE_REPO = 'rajatapp-release'
-        CENTRAL_REPO = 'rajatapp-dependencies'
-        NEXUS_GRP_REPO = 'rajatapp-group'
-        NEXUSIP = '3.80.81.175'
+        RELEASE_REPO = 'vproapp-release'
+        CENTRAL_REPO = 'vproapp-central'
+        NEXUS_GRP_REPO = 'vproapp-group'
+        NEXUSIP = '18.205.41.183'
         NEXUSPORT = '8081'
         NEXUS_LOGIN = 'nexuslogin'
         SONARSERVER = 'sonarserver'
@@ -34,7 +34,7 @@ pipeline {
                     archiveArtifacts artifacts: '**/*.war'
                 }
             }
-        } // Hello
+        }
 
         stage("Test") {
             steps {
@@ -55,7 +55,7 @@ pipeline {
             steps {
                withSonarQubeEnv("${SONARSERVER}") {
                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=rajatapp \
+                   -Dsonar.projectName=vproapp-cicd \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
                    -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
@@ -80,12 +80,12 @@ pipeline {
                   nexusVersion: 'nexus3',
                   protocol: 'http',
                   nexusUrl: "${NEXUSIP}:${NEXUSPORT}",
-                  groupId: 'rajatapp-artifacts', // The folder in which our artifacts will be uploaded after build
+                  groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
                   version: "Build:${env.BUILD_ID}, Time: ${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
                   repository: "${RELEASE_REPO}",
                   credentialsId: "${NEXUS_LOGIN}",
                   artifacts: [
-                    [artifactId: 'rajat app',
+                    [artifactId: 'java-blog-app',
                      classifier: '',
                      file: 'target/vprofile-v2.war',
                      type: 'war']
@@ -97,8 +97,7 @@ pipeline {
 
     post {
         always {
-            echo 'Slack Notifications.'
-            slackSend channel: '#myjenkinsci', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+            slackSend channel: '#jenkinscicd', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n, Artifact uploaded to Nexus repository!"
         }
     }
 }
