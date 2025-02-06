@@ -102,7 +102,7 @@ pipeline {
                 script {
                     sh 'pwd'
                     sh 'ls ./Docker-files/app/'
-                    dockerImage = docker.build(appRegistry + ":$BUILD_NUMBER", "./Docker-files/app/Dockerfile")
+                    dockerImage = docker.build(appRegistry + ":$BUILD_NUMBER", "./Docker-files/app/")
                 }
             }
         }
