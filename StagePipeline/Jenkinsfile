@@ -1,4 +1,3 @@
-/* groovylint-disable LineLength */
 def COLOR_MAP = [
     'SUCCESS': 'good',
     'FAILURE': 'danger',
@@ -22,7 +21,7 @@ pipeline {
         NEXUS_LOGIN = 'nexuslogin'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
-        registryCredential = 'ecr:us-east-1:aws creds'
+        registryCredential = 'ecr:us-east-1:awscreds'
         appRegistry = 'public.ecr.aws/j6f0n1t4/vproapp/repo'
         vprofileRegistry = 'https://public.ecr.aws/j6f0n1t4/vproapp/repo'
     }
@@ -78,25 +77,6 @@ pipeline {
             }
         }
 
-        stage('UploadArtifact') {
-            steps {
-                nexusArtifactUploader(
-                  nexusVersion: 'nexus3',
-                  protocol: 'http',
-                  nexusUrl: "${NEXUSIP}:${NEXUSPORT}",
-                  groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
-                  version: "Build:${env.BUILD_ID}, Time: ${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
-                  repository: "${RELEASE_REPO}",
-                  credentialsId: "${NEXUS_LOGIN}",
-                  artifacts: [
-                    [artifactId: 'java-blog-app',
-                     classifier: '',
-                     file: 'target/vprofile-v2.war',
-                     type: 'war']
-                  ]
-                )
-            }
-        }
         stage('Docker Build Image') {
             steps {
                 script {
