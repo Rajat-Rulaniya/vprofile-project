@@ -24,6 +24,8 @@ pipeline {
         registryCredential = 'ecr:us-east-1:awscreds'
         appRegistry = 'public.ecr.aws/j6f0n1t4/vproapp/repo'
         vprofileRegistry = 'https://public.ecr.aws/j6f0n1t4/vproapp/repo'
+        cluster = "vproapp-staging"
+        service = "vproapp-svc"
     }
 
     stages {
@@ -98,6 +100,32 @@ pipeline {
                             dockerImage.push('latest')
                         }
                     }
+                }
+            }
+            post {
+                success{
+                    echo 'Slack Notification...'
+
+                    def currentStatus = currentBuild.currentResult
+                    def message = ""
+
+                    if (currentStatus == "FAILURE") {
+                        message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ❌ Failed to upload Docker Image to the ECR repository \n More info at: ${env.BUILD_URL}"
+                    } else {
+                        message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ✅ Docker Image uploaded successfully to the ECR repository \n Image: ${appRegistry}:${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+                    }                    
+
+                    slackSend channel: '#jenkinscicd', 
+                        color: COLOR_MAP[currentStatus],
+                        message: message
+                }
+            }
+        }
+
+        stage("Deploy to ECS staging") {
+            steps {
+                withAWS(credentials: 'awscreds', region: 'us-east-1') {
+                    sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment'
                 }
             }
         }
