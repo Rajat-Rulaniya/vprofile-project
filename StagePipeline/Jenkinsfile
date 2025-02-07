@@ -85,8 +85,8 @@ pipeline {
                     dockerImage = docker.build(appRegistry + ":$BUILD_NUMBER", '.')
 
                     // Keeps only last 2 images, delete the rest
-                    
-                    sh 'docker images --format "{{.ID}}" --filter=reference="public.ecr.aws/j6f0n1t4/vproapp repo:*" | \ tail -n +3 | xargs -r docker rmi -f'
+
+                    sh 'docker images --format "{{.ID}}" --filter=reference="public.ecr.aws/j6f0n1t4/vproapp repo:*" | tail -n +3 | xargs -r docker rmi -f'
                 }
             }
         }
