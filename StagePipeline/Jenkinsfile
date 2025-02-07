@@ -93,7 +93,7 @@ pipeline {
 
         stage('Upload App Image') {
             steps {
-                script { // for public ECR repo
+                script { // Uploading to public ecr repository
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'awscreds']]) {
                         sh 'aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/j6f0n1t4/vproapp/repo'
                         
