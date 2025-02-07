@@ -82,9 +82,11 @@ pipeline {
         stage('Docker Build Image') {
             steps {
                 script {
-                    sh 'pwd'
-                    sh 'ls ./Docker-files/app/'
                     dockerImage = docker.build(appRegistry + ":$BUILD_NUMBER", '.')
+
+                    // Keeps only last 2 images, delete the rest
+                    
+                    sh 'docker images --format "{{.ID}}" --filter=reference="public.ecr.aws/j6f0n1t4/vproapp repo:*" | \ tail -n +3 | xargs -r docker rmi -f'
                 }
             }
         }
