@@ -104,20 +104,22 @@ pipeline {
             }
             post {
                 success{
-                    echo 'Slack Notification...'
+                    script {
+                        echo 'Slack Notification...'
 
-                    def currentStatus = currentBuild.currentResult
-                    def message = ""
+                        def currentStatus = currentBuild.currentResult
+                        def message = ""
 
-                    if (currentStatus == "FAILURE") {
-                        message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ❌ Failed to upload Docker Image to the ECR repository \n More info at: ${env.BUILD_URL}"
-                    } else {
-                        message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ✅ Docker Image uploaded successfully to the ECR repository \n Image: ${appRegistry}:${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
-                    }                    
+                        if (currentStatus == "FAILURE") {
+                            message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ❌ Failed to upload Docker Image to the ECR repository \n More info at: ${env.BUILD_URL}"
+                        } else {
+                            message = "*${currentStatus}:* Job ${env.JOB_NAME} \n ✅ Docker Image uploaded successfully to the ECR repository \n Image: ${appRegistry}:${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+                        }                    
 
-                    slackSend channel: '#jenkinscicd', 
-                        color: COLOR_MAP[currentStatus],
-                        message: message
+                        slackSend channel: '#jenkinscicd', 
+                            color: COLOR_MAP[currentStatus],
+                            message: message                        
+                        }
                 }
             }
         }
