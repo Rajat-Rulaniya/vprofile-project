@@ -7,7 +7,8 @@ pipeline {
 
     environment {
         cluster = "vproapp-prod"
-        service = "vproapp-prod-svc"        
+        service = "vproapp-prod-svc"
+        appRegistry = 'public.ecr.aws/j6f0n1t4/vproapp/repo' 
     }
 
     stages {
@@ -16,6 +17,30 @@ pipeline {
                 withAWS(credentials: 'awscreds', region: 'us-east-1') {
                     sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment'
                 }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def currentStatus = currentBuild.currentResult
+                def message = ""
+                if (currentStatus == "FAILURE") {
+                    message = """
+                    ❌ *Failed* to deploy on Production cluster
+                    Service: ${service}
+                    Cluster: ${cluster}
+                    Docker image: ${appRegistry}:latest
+                    More info: ${env.BUILD_URL}
+                    """
+                } else {
+                    message = "✅ *Successfully* deployed to Prod ECS cluster!"
+                }
+
+                slackSend channel: '#jenkinscicd', 
+                    color: COLOR_MAP[currentStatus],
+                    message: "${message} \n More info at ${env.BUILD_URL}"
             }
         }
     }
