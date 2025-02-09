@@ -11,8 +11,9 @@ pipeline {
     }
 
     environment {
-        NEXUS_USER = 'admin'
-        NEXUS_PASS = '1234'
+        NEXUS_CREDENTIALS = credentials('NEXUS_CREDENTIALS')
+        NEXUS_USER = "${NEXUS_CREDENTIALS_USR}"
+        NEXUS_PASS = "${NEXUS_CREDENTIALS_PSW}"
         RELEASE_REPO = 'vproapp-release'
         CENTRAL_REPO = 'vproapp-central'
         NEXUS_GRP_REPO = 'vproapp-group'
