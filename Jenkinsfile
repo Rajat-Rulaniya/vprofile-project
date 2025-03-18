@@ -84,7 +84,7 @@ pipeline {
                   groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
                   version: "Build:${env.BUILD_ID}, ${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
                   repository: "${RELEASE_REPO}",
-                  credentialsId: "${NEXUS_LOGIN}",
+                  credentialsId: "NEXUS_CREDENTIALS",
                   artifacts: [
                     [artifactId: 'java-app',
                      classifier: '',
