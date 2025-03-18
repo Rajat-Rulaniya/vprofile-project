@@ -2,23 +2,22 @@ def COLOR_MAP = [
     'SUCCESS': 'good', 
     'FAILURE': 'danger',
 ]
+
 pipeline {
     agent any;
 
     tools {
-        maven "MAVEN3"
+        maven "maven"
         jdk "OracleJDK17"
     }
 
     environment {
-        NEXUS_USER = 'admin'
-        NEXUS_PASS = '1234'
-        RELEASE_REPO = 'vproapp-release'
-        CENTRAL_REPO = 'vproapp-central'
-        NEXUS_GRP_REPO = 'vproapp-group'
-        NEXUSIP = '18.205.41.183'
-        NEXUSPORT = '8081'
-        NEXUS_LOGIN = 'nexuslogin'
+        NEXUS_CREDENTIALS = credentials('NEXUS_CREDENTIALS')
+        NEXUS_USER = "${NEXUS_CREDENTIALS_USR}"
+        NEXUS_PASS = "${NEXUS_CREDENTIALS_PSW}"
+        RELEASE_REPO = 'vprofile-release'
+        CENTRAL_REPO = 'vprofile-central'
+        NEXUS_GRP_REPO = 'vprofile-group'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
     }
@@ -54,14 +53,16 @@ pipeline {
             }
             steps {
                withSonarQubeEnv("${SONARSERVER}") {
-                   sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=vproapp-cicd \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+                   sh '''
+                        ${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+                        -Dsonar.projectName=vproapp-cicd \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+                   '''
               }
             }
         }
@@ -81,11 +82,11 @@ pipeline {
                   protocol: 'http',
                   nexusUrl: "${NEXUSIP}:${NEXUSPORT}",
                   groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
-                  version: "Build:${env.BUILD_ID}, Time: ${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
+                  version: "Build:${env.BUILD_ID}, ${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
                   repository: "${RELEASE_REPO}",
                   credentialsId: "${NEXUS_LOGIN}",
                   artifacts: [
-                    [artifactId: 'java-blog-app',
+                    [artifactId: 'java-app',
                      classifier: '',
                      file: 'target/vprofile-v2.war',
                      type: 'war']
@@ -96,9 +97,9 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Slack Notifications.'
-            slackSend channel: '#myjenkinsci', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+        success {
+            echo 'Slack Notification....'
+            slackSend channel: '#jenkinscicd', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n\n Artifact uploaded to Nexus SUCCESSFULLY ✅\n\n More info at: ${env.BUILD_URL}"
         }
     }
 }
