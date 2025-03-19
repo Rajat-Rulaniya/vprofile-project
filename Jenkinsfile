@@ -20,6 +20,8 @@ pipeline {
         NEXUS_GRP_REPO = 'vprofile-group'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
+        groupid = 'ARTIFACTS'
+        subgroupid = 'java-app'
     }
 
     stages {
@@ -82,24 +84,50 @@ pipeline {
                   protocol: 'http',
                   nexusUrl: "${NEXUS_URL}",
                   groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
-                  version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}", // the sub folder in groupId, where artifact after each build will be uploaded.
+                  version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}", // the folder where artifact after each build will be uploaded.
                   repository: "${RELEASE_REPO}",
                   credentialsId: "NEXUS_CREDENTIALS",
                   artifacts: [
-                    [artifactId: 'java-app',
+                    [artifactId: 'java-app', // sub-group
                      classifier: '',
                      file: 'target/vprofile-v2.war',
                      type: 'war']
                   ]
                 )
             }
-        }
-    }
 
-    post {
-        success {
-            echo 'Slack Notification....'
-            slackSend channel: '#jenkinscicd', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n\n Artifact uploaded to Nexus SUCCESSFULLY ✅\n\n More info at: ${env.BUILD_URL}"
+            post {
+                success {
+                    echo 'Slack Notification....'
+                    slackSend channel: '#jenkinscicd', color: COLOR_MAP[currentBuild.currentResult], message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build-Version: Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP} \n\n Artifact uploaded to Nexus SUCCESSFULLY ✅\n\n More info at: ${env.BUILD_URL}"
+                }
+            }
+        }
+
+        stage("Run Playbook") {
+            steps {
+                ansiColor('xterm') {
+                    ansiblePlaybook
+                    (
+                        playbook: './ansible/site.yml',
+                        inventory: './ansible/stage.inventory',
+                        credentialsId: 'applogin',
+                        colorized: true,
+                        disableHostKeyChecking: true,
+                        installation: 'ansible',
+                        extraVars: [
+                            USER: env.NEXUS_USER
+                            PASS: env.NEXUS_PASS
+                            NEXUS_URL: env.NEXUS_URL
+                            RELEASE_REPO: env.RELEASE_REPO
+                            groupid: env.groupid
+                            subgroupid: env.subgroupid
+                            vprofile_version: env.BUILD_ID
+                            build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}"
+                        ],
+                    )
+                }
+            }
         }
     }
 }

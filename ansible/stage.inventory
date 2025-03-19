@@ -1,0 +1,3 @@
+[appsrvgrp]
+
+app01 ansible_host=app ansible_hostname=app01
