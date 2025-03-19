@@ -107,15 +107,14 @@ pipeline {
         stage("Run Playbook") {
             steps {
                 ansiColor('xterm') {
-                    ansiblePlaybook
-                    (
-                        playbook: './ansible/site.yml',
-                        inventory: './ansible/stage.inventory',
-                        credentialsId: 'applogin',
-                        colorized: true,
+                    ansiblePlaybook(
+                        playbook              : './ansible/site.yml',
+                        inventory             : './ansible/stage.inventory',
+                        credentialsId         : 'applogin',
+                        colorized             : true,
                         disableHostKeyChecking: true,
-                        installation: 'ansible',
-                        extraVars: [
+                        installation          : 'ansible',
+                        extraVars             : [
                             USER: env.NEXUS_USER,
                             PASS: env.NEXUS_PASS,
                             NEXUS_URL: env.NEXUS_URL,
@@ -124,7 +123,7 @@ pipeline {
                             subgroupid: env.subgroupid,
                             vprofile_version: env.BUILD_ID,
                             build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
-                        ],
+                        ]
                     )
                 }
             }
