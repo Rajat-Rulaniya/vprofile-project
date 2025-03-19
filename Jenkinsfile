@@ -116,14 +116,14 @@ pipeline {
                         disableHostKeyChecking: true,
                         installation: 'ansible',
                         extraVars: [
-                            USER: env.NEXUS_USER
-                            PASS: env.NEXUS_PASS
-                            NEXUS_URL: env.NEXUS_URL
-                            RELEASE_REPO: env.RELEASE_REPO
-                            groupid: env.groupid
-                            subgroupid: env.subgroupid
-                            vprofile_version: env.BUILD_ID
-                            build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}"
+                            USER: env.NEXUS_USER,
+                            PASS: env.NEXUS_PASS,
+                            NEXUS_URL: env.NEXUS_URL,
+                            RELEASE_REPO: env.RELEASE_REPO,
+                            groupid: env.groupid,
+                            subgroupid: env.subgroupid,
+                            vprofile_version: env.BUILD_ID,
+                            build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
                         ],
                     )
                 }
