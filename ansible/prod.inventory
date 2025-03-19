@@ -1,0 +1,3 @@
+[appsrvgrp]
+
+app01-prod ansible_host=app-prod
