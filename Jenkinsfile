@@ -101,7 +101,6 @@ pipeline {
                     sh 'echo "Build-${BUILD_ID}_${BUILD_TIMESTAMP}" > /var/lib/jenkins/latestBuildVprofile.txt'
 
                     sh 'echo "BUILD VERSION SAVED!"'
-                    sh 'echo -> "Build-${BUILD_ID}_${BUILD_TIMESTAMP}"'
                 }
             }
         }
