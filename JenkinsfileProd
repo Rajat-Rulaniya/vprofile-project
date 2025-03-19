@@ -14,7 +14,15 @@ pipeline {
     }
 
     stages {
-        stage("Run Playbook") {
+        stage("Fetch latest build version") {
+            steps {
+                script {
+                    env.BUILD_VERSION = readFile('/var/lib/jenkins/latestBuildVprofile.txt').trim()
+                }
+            }
+        }
+
+        stage("Ansible Deploy to Production server") {
             steps {
                 ansiblePlaybook(
                     playbook: './ansible/site.yml',
@@ -31,7 +39,7 @@ pipeline {
                         groupid: "ARTIFACTS",
                         subgroupid: "java-app",
                         vprofile_version: env.BUILD_ID,
-                        build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
+                        build_version: env.BUILD_VERSION,
                     ]
                 )
             }
