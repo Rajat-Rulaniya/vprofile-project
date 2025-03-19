@@ -132,8 +132,7 @@ pipeline {
     post {
         success {
             echo 'Slack Notification....'
-            slackSend 
-                channel: '#jenkinscicd', 
+            slackSend channel: '#jenkinscicd', 
                 color: COLOR_MAP[currentBuild.currentResult], 
                 message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build-Version: Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP} \n\n Artifact Uploaded to Staging Server! ✅\n\n More info at: ${env.BUILD_URL}"
         }
