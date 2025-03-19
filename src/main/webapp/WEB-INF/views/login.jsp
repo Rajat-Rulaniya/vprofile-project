@@ -25,7 +25,7 @@
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
     <head>
-    <title>Welcome Rajat Rulaniya, How are you?</title>
+    <title>Welcome</title>
     <link href="${contextPath}/resources/css/profile.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="https://bootswatch.com/cosmo/bootstrap.min.css">
@@ -72,7 +72,7 @@
 <div class="container">
 	
     <form method="POST" action="${contextPath}/login" class="form-signin">
-        <h2 class="form-heading" align="center"> WELCOME! </h2>
+        <h2 class="form-heading" align="center"> WELCOME Rajat Rulaniya!, How are you?</h2>
 		<img  class="logo" src="${contextPath}/resources/Images/hkh-infotech-logo.png" />
         <div class="form-group ${error != null ? 'has-error' : ''}">
             <span>${message}</span>

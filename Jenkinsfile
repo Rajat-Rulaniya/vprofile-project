@@ -20,8 +20,6 @@ pipeline {
         NEXUS_GRP_REPO = 'vprofile-group'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
-        groupid = 'ARTIFACTS'
-        subgroupid = 'java-app'
     }
 
     stages {
@@ -118,8 +116,8 @@ pipeline {
                         PASS: env.NEXUS_PASS,
                         NEXUS_URL: env.NEXUS_PRIVATE_URL,
                         RELEASE_REPO: env.RELEASE_REPO,
-                        groupid: env.groupid,
-                        subgroupid: env.subgroupid,
+                        groupid: "ARTIFACTS",
+                        subgroupid: "java-app",
                         vprofile_version: env.BUILD_ID,
                         build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
                     ]
