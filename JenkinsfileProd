@@ -11,6 +11,8 @@ pipeline {
         NEXUS_USER = "${NEXUS_CREDENTIALS_USR}"
         NEXUS_PASS = "${NEXUS_CREDENTIALS_PSW}"
         RELEASE_REPO = 'vprofile-release'
+        groupid = 'ARTIFACTS'
+        subgroupid = 'java-app'
     }
 
     stages {
