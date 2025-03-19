@@ -98,10 +98,10 @@ pipeline {
         stage("Save build version") {
             steps {
                 script {
-                    sh 'echo "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}" > /var/lib/jenkins/latestBuildVprofile.txt'
+                    sh 'echo "Build-${BUILD_ID}_${BUILD_TIMESTAMP}" > /var/lib/jenkins/latestBuildVprofile.txt'
 
-                    sh 'echo BUILD VERSION SAVED!'
-                    sh 'echo -> Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}'
+                    sh 'echo "BUILD VERSION SAVED!"'
+                    sh 'echo -> "Build-${BUILD_ID}_${BUILD_TIMESTAMP}"'
                 }
             }
         }
