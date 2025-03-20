@@ -20,13 +20,21 @@ pipeline {
         NEXUS_GRP_REPO = 'vprofile-group'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
+        AWS_CRED = 'awscreds-jenkins'
+        AWS_REGION = 'us-east-1'
+        S3_BUCKET = 'rajat-blog-app-artifacts'
+        EB_APPLICATION = 'vpro-staging'
+        EB_ENV = 'Vpro-staging-env'
     }
 
     stages {
         stage("Build") {
             steps {
                 sh "mvn -s settings.xml -DskipTests install"
+
+                sh "mv ./target/vprofile-v2.war ./target/vprofile-Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}.war"
             }
+
             post {
                 success {
                     echo "Now Archiving."
@@ -75,55 +83,49 @@ pipeline {
             }
         }
 
-        stage("UploadArtifact"){
-            steps{
-                nexusArtifactUploader(
-                  nexusVersion: 'nexus3',
-                  protocol: 'http',
-                  nexusUrl: "${NEXUS_URL}",
-                  groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
-                  version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}", // the folder where artifact after each build will be uploaded.
-                  repository: "${RELEASE_REPO}",
-                  credentialsId: "NEXUS_CREDENTIALS",
-                  artifacts: [
-                    [artifactId: 'java-app', // sub-group
-                     classifier: '',
-                     file: 'target/vprofile-v2.war',
-                     type: 'war']
-                  ]
-                )
-            }
-        }
-
         stage("Save build version") {
             steps {
                 script {
-                    sh 'echo "Build-${BUILD_ID}_${BUILD_TIMESTAMP}" > /var/lib/jenkins/latestBuildVprofile.txt'
+                    env.buildVersion = "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}"
+
+                    sh 'echo "${buildVersion}" > /var/lib/jenkins/vprofileBuildVersion.txt'
 
                     sh 'echo "BUILD VERSION SAVED!"'
                 }
             }
         }
 
-        stage("Ansible Deploy to Staging server") {
+        stage("UploadArtifact to S3"){
+            steps{
+                withAWS(region: 'us-east-1', credentials: 'awscreds-jenkins') {
+                    s3Upload(
+                        file:"./target/vprofile-${env.buildVersion}.war",
+                        bucket: S3_BUCKET,
+                        path: "java-app/vprofile-${env.buildVersion}.war"
+                    )
+                }
+            }
+        }
+
+        stage("Update Beanstalk Environment") {
             steps {
-                ansiblePlaybook(
-                    playbook              : './ansible/site.yml',
-                    inventory             : './ansible/stage.inventory',
-                    credentialsId         : 'applogin',
-                    colorized             : true,
-                    disableHostKeyChecking: true,
-                    installation          : 'ansible',
-                    extraVars             : [
-                        USER: env.NEXUS_USER,
-                        PASS: env.NEXUS_PASS,
-                        NEXUS_URL: env.NEXUS_PRIVATE_URL,
-                        RELEASE_REPO: env.RELEASE_REPO,
-                        groupid: "ARTIFACTS",
-                        subgroupid: "java-app",
-                        build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
-                    ]
-                )
+                script {
+                    withAWS(region: AWS_REGION, credentials: AWS_CRED) {
+                        sh """
+                            aws elasticbeanstalk create-application-version \
+                            --application-name ${EB_APPLICATION} \
+                            --version-label ${buildVersion} \
+                            --source-bundle S3Bucket="${S3_BUCKET}",S3Key="java-app/vprofile-${env.buildVersion}.war"
+                        """
+
+                        sh """
+                            aws elasticbeanstalk update-environment \
+                            --application-name ${EB_APPLICATION} \
+                            --environment-name ${EB_ENV} \
+                            --version-label ${buildVersion}
+                        """
+                    }
+                }                
             }
         }
     }
@@ -133,7 +135,7 @@ pipeline {
             echo 'Slack Notification....'
             slackSend channel: '#jenkinscicd', 
                 color: COLOR_MAP[currentBuild.currentResult], 
-                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build-Version: Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP} \n\n Artifact Uploaded to Staging Server! ✅\n\n More info at: ${env.BUILD_URL}"
+                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build-Version: Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP} \n\n New Artifact Uploaded to Staging Beanstalk Environment! ✅\n\n More info at: ${env.BUILD_URL}"
         }
     }
 }
