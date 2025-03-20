@@ -1,121 +1,139 @@
+def COLOR_MAP = [
+    'SUCCESS': 'good', 
+    'FAILURE': 'danger',
+]
+
 pipeline {
-    
-	agent any
-/*	
-	tools {
-        maven "maven3"
+    agent any;
+
+    tools {
+        maven "maven"
+        jdk "OracleJDK17"
     }
-*/	
+
     environment {
-        NEXUS_VERSION = "nexus3"
-        NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "172.31.40.209:8081"
-        NEXUS_REPOSITORY = "vprofile-release"
-	NEXUS_REPO_ID    = "vprofile-release"
-        NEXUS_CREDENTIAL_ID = "nexuslogin"
-        ARTVERSION = "${env.BUILD_ID}"
+        NEXUS_CREDENTIALS = credentials('NEXUS_CREDENTIALS')
+        NEXUS_USER = "${NEXUS_CREDENTIALS_USR}"
+        NEXUS_PASS = "${NEXUS_CREDENTIALS_PSW}"
+        RELEASE_REPO = 'vprofile-release'
+        CENTRAL_REPO = 'vprofile-central'
+        NEXUS_GRP_REPO = 'vprofile-group'
+        SONARSERVER = 'sonarserver'
+        SONARSCANNER = 'sonarscanner'
     }
-	
-    stages{
-        
-        stage('BUILD'){
+
+    stages {
+        stage("Build") {
             steps {
-                sh 'mvn clean install -DskipTests'
+                sh "mvn -s settings.xml -DskipTests install"
             }
             post {
                 success {
-                    echo 'Now Archiving...'
-                    archiveArtifacts artifacts: '**/target/*.war'
+                    echo "Now Archiving."
+                    archiveArtifacts artifacts: '**/*.war'
                 }
             }
         }
 
-	stage('UNIT TEST'){
+        stage("Test") {
             steps {
-                sh 'mvn test'
+                sh "mvn -s settings.xml test"
             }
         }
 
-	stage('INTEGRATION TEST'){
+        stage("Checkstyle Analysis") {
             steps {
-                sh 'mvn verify -DskipUnitTests'
+                sh 'mvn -s settings.xml checkstyle:checkstyle'
+            }
+        }    
+
+        stage("Sonar Analysis") {
+            environment {
+                scannerHome = tool "${SONARSCANNER}"
+            }
+            steps {
+               withSonarQubeEnv("${SONARSERVER}") {
+                   sh '''
+                        ${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+                        -Dsonar.projectName=vproapp-cicd \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+                   '''
+              }
             }
         }
-		
-        stage ('CODE ANALYSIS WITH CHECKSTYLE'){
+
+        stage('Quality Gate') {
             steps {
-                sh 'mvn checkstyle:checkstyle'
-            }
-            post {
-                success {
-                    echo 'Generated Analysis Result'
+                timeout(time: 1, unit: "HOURS") {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
-             scannerHome = tool 'sonarscanner4'
-          }
-
-          steps {
-            withSonarQubeEnv('sonar-pro') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=vprofile-repo \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+        stage("UploadArtifact"){
+            steps{
+                nexusArtifactUploader(
+                  nexusVersion: 'nexus3',
+                  protocol: 'http',
+                  nexusUrl: "${NEXUS_URL}",
+                  groupId: 'ARTIFACTS', // The folder in which our artifacts will be uploaded after build
+                  version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}", // the folder where artifact after each build will be uploaded.
+                  repository: "${RELEASE_REPO}",
+                  credentialsId: "NEXUS_CREDENTIALS",
+                  artifacts: [
+                    [artifactId: 'java-app', // sub-group
+                     classifier: '',
+                     file: 'target/vprofile-v2.war',
+                     type: 'war']
+                  ]
+                )
             }
-
-            timeout(time: 10, unit: 'MINUTES') {
-               waitForQualityGate abortPipeline: true
-            }
-          }
         }
 
-        stage("Publish to Nexus Repository Manager") {
+        stage("Save build version") {
             steps {
                 script {
-                    pom = readMavenPom file: "pom.xml";
-                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
-                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
-                    artifactPath = filesByGlob[0].path;
-                    artifactExists = fileExists artifactPath;
-                    if(artifactExists) {
-                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version} ARTVERSION";
-                        nexusArtifactUploader(
-                            nexusVersion: NEXUS_VERSION,
-                            protocol: NEXUS_PROTOCOL,
-                            nexusUrl: NEXUS_URL,
-                            groupId: pom.groupId,
-                            version: ARTVERSION,
-                            repository: NEXUS_REPOSITORY,
-                            credentialsId: NEXUS_CREDENTIAL_ID,
-                            artifacts: [
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: artifactPath,
-                                type: pom.packaging],
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: "pom.xml",
-                                type: "pom"]
-                            ]
-                        );
-                    } 
-		    else {
-                        error "*** File: ${artifactPath}, could not be found";
-                    }
+                    sh 'echo "Build-${BUILD_ID}_${BUILD_TIMESTAMP}" > /var/lib/jenkins/latestBuildVprofile.txt'
+
+                    sh 'echo "BUILD VERSION SAVED!"'
                 }
             }
         }
 
-
+        stage("Ansible Deploy to Staging server") {
+            steps {
+                ansiblePlaybook(
+                    playbook              : './ansible/site.yml',
+                    inventory             : './ansible/stage.inventory',
+                    credentialsId         : 'applogin',
+                    colorized             : true,
+                    disableHostKeyChecking: true,
+                    installation          : 'ansible',
+                    extraVars             : [
+                        USER: env.NEXUS_USER,
+                        PASS: env.NEXUS_PASS,
+                        NEXUS_URL: env.NEXUS_PRIVATE_URL,
+                        RELEASE_REPO: env.RELEASE_REPO,
+                        groupid: "ARTIFACTS",
+                        subgroupid: "java-app",
+                        build_version: "Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP}",
+                    ]
+                )
+            }
+        }
     }
 
-
+    post {
+        success {
+            echo 'Slack Notification....'
+            slackSend channel: '#jenkinscicd', 
+                color: COLOR_MAP[currentBuild.currentResult], 
+                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build-Version: Build-${env.BUILD_ID}_${env.BUILD_TIMESTAMP} \n\n Artifact Uploaded to Staging Server! ✅\n\n More info at: ${env.BUILD_URL}"
+        }
+    }
 }
