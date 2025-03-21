@@ -28,12 +28,6 @@ pipeline {
                 script {
                     withAWS(region: AWS_REGION, credentials: AWS_CRED) {
                         sh """
-                            aws elasticbeanstalk create-application-version \
-                            --application-name ${EB_APPLICATION} \
-                            --version-label ${buildVersion} \
-                            --source-bundle S3Bucket="${S3_BUCKET}",S3Key="java-app/vprofile-${env.buildVersion}.war"
-                        """
-                        sh """
                             aws elasticbeanstalk update-environment \
                             --application-name ${EB_APPLICATION} \
                             --environment-name ${EB_ENV} \
