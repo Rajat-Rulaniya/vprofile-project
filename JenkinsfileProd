@@ -10,7 +10,7 @@ pipeline {
         AWS_CRED = 'awscreds-jenkins'
         AWS_REGION = 'us-east-1'
         S3_BUCKET = 'rajat-blog-app-artifacts'
-        EB_APPLICATION = 'vproapp-prod'
+        EB_APPLICATION = 'vproapp'
         EB_ENV = 'Vproapp-prod-env'
     }
 
