@@ -36,7 +36,7 @@ pipeline {
                         sh """
                             aws elasticbeanstalk update-environment \
                             --application-name ${EB_APPLICATION} \
-                            --environment-name ${EB_ENV} \a
+                            --environment-name ${EB_ENV} \
                             --version-label ${buildVersion}
                         """
                     }
