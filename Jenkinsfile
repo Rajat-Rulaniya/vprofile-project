@@ -23,8 +23,8 @@ pipeline {
         AWS_CRED = 'awscreds-jenkins'
         AWS_REGION = 'us-east-1'
         S3_BUCKET = 'rajat-blog-app-artifacts'
-        EB_APPLICATION = 'vpro-staging'
-        EB_ENV = 'Vpro-staging-env'
+        EB_APPLICATION = 'vproapp-staging'
+        EB_ENV = 'Vproapp-staging-env'
     }
 
     stages {
@@ -107,7 +107,7 @@ pipeline {
             }
         }
 
-        stage("Update Beanstalk Environment") {
+        stage("Update Staging Beanstalk Environment") {
             steps {
                 script {
                     withAWS(region: AWS_REGION, credentials: AWS_CRED) {

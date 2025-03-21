@@ -1,0 +1,47 @@
+def COLOR_MAP = [
+    'SUCCESS': 'good',
+    'FAILURE': 'danger',
+]
+
+pipeline {
+    agent any;
+
+    environment {
+        AWS_CRED = 'awscreds-jenkins'
+        AWS_REGION = 'us-east-1'
+        S3_BUCKET = 'rajat-blog-app-artifacts'
+        EB_APPLICATION = 'vproapp-prod'
+        EB_ENV = 'Vproapp-prod-env'
+    }
+
+    stages {
+        stage("Fetch latest build version") {
+            steps {
+                script {
+                    env.buildVersion = readFile('/var/lib/jenkins/vprofileBuildVersion.txt').trim()
+                }
+            }
+        }
+        
+        stage("Update Production Beanstalk Environment") {
+            steps {
+                script {
+                    withAWS(region: AWS_REGION, credentials: AWS_CRED) {
+                        sh """
+                            aws elasticbeanstalk create-application-version \
+                            --application-name ${EB_APPLICATION} \
+                            --version-label ${buildVersion} \
+                            --source-bundle S3Bucket="${S3_BUCKET}",S3Key="java-app/vprofile-${env.buildVersion}.war"
+                        """
+                        sh """
+                            aws elasticbeanstalk update-environment \
+                            --application-name ${EB_APPLICATION} \
+                            --environment-name ${EB_ENV} \a
+                            --version-label ${buildVersion}
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
